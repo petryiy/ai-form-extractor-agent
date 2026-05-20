@@ -251,8 +251,9 @@ export const requirementCriteria: RequirementCriterion[] = [
   {
     key: "additionalContext",
     label: "补充背景",
-    description: "其他对方案设计重要的信息。",
-    question: "还有什么背景信息会影响方案设计或优先级？",
+    description:
+      "其他对方案设计重要、但不适合放入固定 Criteria 的信息，例如客户术语、例外场景、隐性偏好、操作细节、风险提醒或自然追问得到的补充洞察。",
+    question: "还有什么没有归到前面字段里、但会影响方案设计或优先级的背景信息？",
     required: false
   }
 ];

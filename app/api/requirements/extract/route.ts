@@ -54,7 +54,7 @@ const patchFieldGuide = `Allowed patch keys and value types:
 - constraints: string[]
 - dataSensitivity: "low" | "medium" | "high" | "regulated" | "unknown"
 - decisionProcess: string
-- additionalContext: string`;
+- additionalContext: string for useful details that do not fit the fixed criteria`;
 
 function toTranscript(messages: VisibleMessage[]): string {
   return messages

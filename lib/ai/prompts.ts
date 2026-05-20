@@ -2,7 +2,8 @@ import { requirementCriteria, type RequirementState } from "@/lib/requirements/s
 import {
   buildFallbackQuestion,
   formatRequirementStateForPrompt,
-  getMissingCriteria
+  getMissingCriteria,
+  getMissingOptionalCriteria
 } from "@/lib/requirements/state";
 
 export function buildExtractionPrompt({
@@ -41,6 +42,8 @@ Rules:
 13. For mustHaveFeatures and niceToHaveFeatures, separate deal-critical capabilities from optional wishes. Do not inflate every idea into a must-have.
 14. Even if the current hidden state is already complete, still apply later customer corrections, refinements, and newly provided details to patch.
 15. Keep evidence to at most 8 short quotes. Evidence is only support material; never let it grow into a transcript dump.
+16. Do not use a generic closing nextQuestion while useful optional fields are still unknown. After required fields are complete, keep asking one natural follow-up about platform preference, integrations, stakeholders, constraints, data sensitivity, nice-to-have features, or additional context if any of them are still missing.
+17. If the customer gives useful details that do not fit any fixed criterion, store them in additionalContext as concise notes. When adding additionalContext, preserve useful existing notes unless the customer explicitly corrects or retracts them.
 
 Criteria:
 ${criteriaGuide}
@@ -60,9 +63,11 @@ export function buildAnalystSystemPrompt({
   suggestedNextQuestion: string | null;
 }): string {
   const missing = getMissingCriteria(currentState);
+  const optionalMissing = getMissingOptionalCriteria(currentState);
   const fallbackQuestion = buildFallbackQuestion(currentState);
   const question = suggestedNextQuestion ?? fallbackQuestion;
-  const complete = missing.length === 0;
+  const requiredComplete = missing.length === 0;
+  const optionalDiscoveryRemaining = requiredComplete && optionalMissing.length > 0;
 
   return `你是一位资深 B2B SaaS 业务分析师，正在通过自然语言访谈获取客户需求。
 
@@ -85,8 +90,12 @@ ${formatRequirementStateForPrompt(currentState)}
 11. 如果客户提到“节省备课时间”“替换现在的 App”等上下文，可以自然追问类似：“听起来老师们现在的负担很重，如果要引入新系统替换掉目前的 App，通常需要学校哪些领导审批？”
 12. 如果客户只给宽泛场景，追问一个具体例子：谁在什么时间、用什么设备、记录什么、谁查看、如何反馈。
 13. ${
-    complete
-      ? "核心必填信息已经齐全，请给出一段简短总结，并询问是否还有补充或修正。"
-      : `下一步优先追问这个问题：${question}`
+    missing.length > 0
+      ? `下一步优先追问这个必填问题：${question}`
+      : optionalDiscoveryRemaining
+        ? `核心必填信息已经齐全，但还有这些高价值背景待确认：${optionalMissing
+            .map((criterion) => criterion.label)
+            .join("、")}。不要结束访谈；先用一句话承接客户刚刚说的信息，再自然追问这个问题：${question}`
+        : "核心信息和高价值背景已经比较完整，请给出一段简短总结，并询问是否还有补充或修正。"
   }`;
 }

@@ -32,10 +32,34 @@ export function mergeRequirementPatch(
       continue;
     }
 
+    if (
+      key === "additionalContext" &&
+      typeof current.additionalContext === "string" &&
+      typeof value === "string"
+    ) {
+      Object.assign(next, { [key]: mergeAdditionalContext(current.additionalContext, value) });
+      continue;
+    }
+
     Object.assign(next, { [key]: value });
   }
 
   return requirementStateSchema.parse(next);
+}
+
+function mergeAdditionalContext(previous: string, next: string) {
+  const previousText = previous.trim();
+  const nextText = next.trim();
+
+  if (!previousText || previousText.includes(nextText)) {
+    return previousText || nextText;
+  }
+
+  if (nextText.includes(previousText)) {
+    return nextText;
+  }
+
+  return `${previousText}\n${nextText}`.slice(0, 1200);
 }
 
 export function isMissingValue(value: RequirementState[RequirementKey]): boolean {
@@ -53,6 +77,12 @@ export function isMissingValue(value: RequirementState[RequirementKey]): boolean
 export function getMissingCriteria(state: RequirementState): RequirementCriterion[] {
   return requirementCriteria.filter(
     (criterion) => criterion.required && isMissingValue(state[criterion.key])
+  );
+}
+
+export function getMissingOptionalCriteria(state: RequirementState): RequirementCriterion[] {
+  return requirementCriteria.filter(
+    (criterion) => !criterion.required && isMissingValue(state[criterion.key])
   );
 }
 
@@ -136,5 +166,11 @@ export function buildFallbackQuestion(state: RequirementState): string {
     return nextMissing.question;
   }
 
-  return "我已经收集到核心信息了。你还有什么需要补充或修正的吗？";
+  const [nextOptional] = getMissingOptionalCriteria(state);
+
+  if (nextOptional) {
+    return nextOptional.question;
+  }
+
+  return "我已经收集到比较完整的信息了。你还有什么需要补充或修正的吗？";
 }
