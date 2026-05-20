@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const nullableTrimmedString = (maxLength = 600) =>
+const nullableTrimmedStringBase = (maxLength = 600) =>
   z.preprocess(
     (value) => {
       if (typeof value !== "string") {
@@ -11,9 +11,12 @@ const nullableTrimmedString = (maxLength = 600) =>
       return trimmed.length > 0 ? trimmed : null;
     },
     z.string().min(1).max(maxLength).nullable()
-  ).default(null);
+  );
 
-const nullableStringArray = (maxItems = 12, maxItemLength = 240) =>
+const nullableTrimmedString = (maxLength = 600) =>
+  nullableTrimmedStringBase(maxLength).default(null);
+
+const nullableStringArrayBase = (maxItems = 12, maxItemLength = 240) =>
   z.preprocess(
     (value) => {
       if (!Array.isArray(value)) {
@@ -28,12 +31,16 @@ const nullableStringArray = (maxItems = 12, maxItemLength = 240) =>
       return cleaned.length > 0 ? Array.from(new Set(cleaned)) : null;
     },
     z.array(z.string().min(1).max(maxItemLength)).max(maxItems).nullable()
-  ).default(null);
+  );
 
-export const dataSensitivitySchema = z
+const nullableStringArray = (maxItems = 12, maxItemLength = 240) =>
+  nullableStringArrayBase(maxItems, maxItemLength).default(null);
+
+const dataSensitivityBaseSchema = z
   .enum(["low", "medium", "high", "regulated", "unknown"])
-  .nullable()
-  .default(null);
+  .nullable();
+
+export const dataSensitivitySchema = dataSensitivityBaseSchema.default(null);
 
 export const requirementStateSchema = z.object({
   industry: nullableTrimmedString(160),
@@ -59,7 +66,29 @@ export const requirementStateSchema = z.object({
   additionalContext: nullableTrimmedString(1200)
 });
 
-export const requirementPatchSchema = requirementStateSchema.partial();
+export const requirementPatchSchema = z.object({
+  industry: nullableTrimmedStringBase(160).optional(),
+  companySize: nullableTrimmedStringBase(120).optional(),
+  corePainPoints: nullableStringArrayBase(8, 280).optional(),
+  compellingEvent: nullableTrimmedStringBase(500).optional(),
+  currentWorkflow: nullableTrimmedStringBase(900).optional(),
+  specificWorkflow: nullableTrimmedStringBase(1200).optional(),
+  targetUsers: nullableStringArrayBase(8, 180).optional(),
+  authority: nullableTrimmedStringBase(700).optional(),
+  alternativeSolution: nullableTrimmedStringBase(700).optional(),
+  platformPreference: nullableStringArrayBase(6, 160).optional(),
+  mustHaveFeatures: nullableStringArrayBase(12, 240).optional(),
+  niceToHaveFeatures: nullableStringArrayBase(12, 240).optional(),
+  budgetRange: nullableTrimmedStringBase(160).optional(),
+  timeline: nullableTrimmedStringBase(160).optional(),
+  successMetrics: nullableStringArrayBase(8, 240).optional(),
+  integrations: nullableStringArrayBase(12, 180).optional(),
+  stakeholders: nullableStringArrayBase(10, 180).optional(),
+  constraints: nullableStringArrayBase(10, 240).optional(),
+  dataSensitivity: dataSensitivityBaseSchema.optional(),
+  decisionProcess: nullableTrimmedStringBase(600).optional(),
+  additionalContext: nullableTrimmedStringBase(1200).optional()
+});
 
 export type DataSensitivity = z.infer<typeof dataSensitivitySchema>;
 export type RequirementState = z.infer<typeof requirementStateSchema>;

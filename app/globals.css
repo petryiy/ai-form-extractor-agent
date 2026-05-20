@@ -570,6 +570,66 @@ h3 {
   margin: 0;
 }
 
+.admin-history {
+  display: grid;
+  gap: 10px;
+  margin: 0 18px 18px;
+  padding: 12px;
+  border: 1px solid #e8d6ae;
+  border-radius: 8px;
+  background: #fffaf0;
+}
+
+.admin-history-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-history-header span {
+  color: #7a6233;
+  font-size: 0.78rem;
+}
+
+.history-item {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid #f0ddb9;
+  border-radius: 8px;
+  background: white;
+}
+
+.history-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #73531d;
+  font-size: 0.78rem;
+}
+
+.history-meta span {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #fff3d8;
+}
+
+.history-item p {
+  color: #4f4030;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.history-evidence {
+  color: var(--teal-dark) !important;
+}
+
+.history-notes {
+  color: var(--red) !important;
+}
+
 .admin-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

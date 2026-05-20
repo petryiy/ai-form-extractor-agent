@@ -266,6 +266,44 @@ export function AdminDashboard() {
                 </strong>
               </div>
 
+              <div className="admin-history">
+                <div className="admin-history-header">
+                  <h3>最近抽取记录</h3>
+                  <span>用于判断 AI 是否真的写入字段</span>
+                </div>
+                {selectedSession.extractionHistory
+                  .slice(-5)
+                  .reverse()
+                  .map((item, index) => (
+                    <div className="history-item" key={`${item.updatedAt}-${index}`}>
+                      <div className="history-meta">
+                        <strong>{formatTime(item.updatedAt)}</strong>
+                        <span>{Math.round(item.completeness * 100)}%</span>
+                        <span>confidence {Math.round(item.confidence * 100)}%</span>
+                        <span>{item.customerIntent}</span>
+                      </div>
+
+                      <p>
+                        {item.changes.length
+                          ? item.changes
+                              .map((change) => `${change.label} ${change.action}`)
+                              .join("；")
+                          : "本次没有字段变化"}
+                      </p>
+
+                      {item.evidence.length ? (
+                        <p className="history-evidence">
+                          {item.evidence.map((evidence) => evidence.quote).join(" / ")}
+                        </p>
+                      ) : null}
+
+                      {item.notes.length ? (
+                        <p className="history-notes">{item.notes.join("；")}</p>
+                      ) : null}
+                    </div>
+                  ))}
+              </div>
+
               <div className="admin-fields">
                 {requirementCriteria.map((criterion) => (
                   <div className="admin-field" key={criterion.key}>

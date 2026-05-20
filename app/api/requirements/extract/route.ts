@@ -21,13 +21,40 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const extractionJsonShape = `{
-  "patch": {},
+  "patch": {
+    "industry": "education",
+    "corePainPoints": ["teachers spend too much time preparing lessons"],
+    "timeline": "before next semester"
+  },
   "nextQuestion": "string or null",
   "customerIntent": "provide_requirements | change_previous_answer | off_topic | not_sure | done",
   "evidence": [{ "field": "one requirement field key", "quote": "short supporting quote" }],
   "confidence": 0.0,
   "notes": []
 }`;
+
+const patchFieldGuide = `Allowed patch keys and value types:
+- industry: string
+- companySize: string
+- corePainPoints: string[]
+- compellingEvent: string
+- currentWorkflow: string
+- specificWorkflow: string
+- targetUsers: string[]
+- authority: string
+- alternativeSolution: string
+- platformPreference: string[]
+- mustHaveFeatures: string[]
+- niceToHaveFeatures: string[]
+- budgetRange: string
+- timeline: string
+- successMetrics: string[]
+- integrations: string[]
+- stakeholders: string[]
+- constraints: string[]
+- dataSensitivity: "low" | "medium" | "high" | "regulated" | "unknown"
+- decisionProcess: string
+- additionalContext: string`;
 
 function toTranscript(messages: VisibleMessage[]): string {
   return messages
@@ -53,8 +80,10 @@ async function generateExtractionUpdate({
 
   const prompt = `${buildExtractionPrompt({ transcript, currentState })}
 
-Return exactly this JSON shape. Do not stream, do not use markdown, and do not add any text outside JSON:
-${extractionJsonShape}`;
+Return one JSON object using this envelope. The patch values shown here are examples, not default values. Omit every patch key that is not directly supported by the customer transcript. Do not return an empty patch when the customer has provided concrete requirement information. Do not stream, do not use markdown, and do not add any text outside JSON:
+${extractionJsonShape}
+
+${patchFieldGuide}`;
 
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     try {
@@ -68,6 +97,11 @@ ${extractionJsonShape}`;
           model: config.model,
           messages: [
             {
+              role: "system",
+              content:
+                "You extract B2B SaaS requirements into strict JSON. Return JSON only. Never wrap the JSON in markdown."
+            },
+            {
               role: "user",
               content: prompt
             }
@@ -79,7 +113,7 @@ ${extractionJsonShape}`;
             type: "disabled"
           },
           temperature: 0,
-          max_tokens: 1400
+          max_tokens: 3000
         })
       });
 
@@ -103,7 +137,7 @@ ${extractionJsonShape}`;
         throw new Error("DeepSeek extraction returned an empty message.");
       }
 
-      const object = JSON.parse(stripJsonFence(content));
+      const object = parseJsonObjectFromText(content);
       return extractionUpdateSchema.parse(object);
     } catch (error) {
       lastError = error;
@@ -122,6 +156,23 @@ function stripJsonFence(text: string) {
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
+}
+
+function parseJsonObjectFromText(text: string) {
+  const stripped = stripJsonFence(text);
+
+  try {
+    return JSON.parse(stripped);
+  } catch {
+    const firstBrace = stripped.indexOf("{");
+    const lastBrace = stripped.lastIndexOf("}");
+
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+      throw new Error(`DeepSeek extraction did not return a JSON object: ${stripped.slice(0, 240)}`);
+    }
+
+    return JSON.parse(stripped.slice(firstBrace, lastBrace + 1));
+  }
 }
 
 export async function POST(request: Request) {

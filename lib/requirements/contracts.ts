@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { requirementCriteria, requirementStateSchema } from "@/lib/requirements/schema";
+import {
+  requirementCriteria,
+  requirementPatchSchema,
+  requirementStateSchema
+} from "@/lib/requirements/schema";
 
 const criterionKeys = requirementCriteria.map((criterion) => criterion.key) as [
   string,
@@ -21,11 +25,9 @@ export const extractRequestSchema = z.object({
 });
 
 export const extractionUpdateSchema = z.object({
-  patch: requirementStateSchema
-    .partial()
-    .describe(
-      "Only fields explicitly supported by the transcript. Use null only when the user retracts or clears a prior answer."
-    ),
+  patch: requirementPatchSchema.describe(
+    "Only fields explicitly supported by the transcript. Use null only when the user retracts or clears a prior answer."
+  ),
   nextQuestion: z
     .string()
     .min(1)
