@@ -168,6 +168,7 @@ export function RequirementAgent({ showInspector = false }: RequirementAgentProp
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isComposingRef = useRef(false);
 
   const { messages, append, isLoading, setMessages, stop } = useChat({
     api: "/api/chat",
@@ -332,6 +333,10 @@ export function RequirementAgent({ showInspector = false }: RequirementAgentProp
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (isComposingRef.current || event.nativeEvent.isComposing || event.keyCode === 229) {
+      return;
+    }
+
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       event.currentTarget.form?.requestSubmit();
@@ -411,6 +416,12 @@ export function RequirementAgent({ showInspector = false }: RequirementAgentProp
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={handleKeyDown}
+                onCompositionStart={() => {
+                  isComposingRef.current = true;
+                }}
+                onCompositionEnd={() => {
+                  isComposingRef.current = false;
+                }}
                 placeholder={t.placeholder}
                 rows={3}
               />
