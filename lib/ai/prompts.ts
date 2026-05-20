@@ -39,6 +39,8 @@ Rules:
 11. For alternativeSolution, capture existing apps, spreadsheets, manual workarounds, competitor names, and what is painful about them.
 12. For specificWorkflow, capture concrete chains of action and timing, not vague labels. For example, classroom real-time recording vs after-class recall are different workflows.
 13. For mustHaveFeatures and niceToHaveFeatures, separate deal-critical capabilities from optional wishes. Do not inflate every idea into a must-have.
+14. Even if the current hidden state is already complete, still apply later customer corrections, refinements, and newly provided details to patch.
+15. Keep evidence to at most 8 short quotes. Evidence is only support material; never let it grow into a transcript dump.
 
 Criteria:
 ${criteriaGuide}

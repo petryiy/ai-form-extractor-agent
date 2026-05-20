@@ -83,7 +83,9 @@ async function generateExtractionUpdate({
 Return one JSON object using this envelope. The patch values shown here are examples, not default values. Omit every patch key that is not directly supported by the customer transcript. Do not return an empty patch when the customer has provided concrete requirement information. Do not stream, do not use markdown, and do not add any text outside JSON:
 ${extractionJsonShape}
 
-${patchFieldGuide}`;
+${patchFieldGuide}
+
+Keep evidence short: at most 8 items.`;
 
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     try {

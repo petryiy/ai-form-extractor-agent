@@ -10,6 +10,33 @@ const criterionKeys = requirementCriteria.map((criterion) => criterion.key) as [
   ...string[]
 ];
 
+const truncateArray =
+  (maxItems: number) =>
+  (value: unknown): unknown => {
+    if (!Array.isArray(value)) {
+      return value;
+    }
+
+    return value.slice(0, maxItems);
+  };
+
+const extractionEvidenceSchema = z.preprocess(
+  truncateArray(12),
+  z
+    .array(
+      z.object({
+        field: z.enum(criterionKeys),
+        quote: z.string().min(1).max(500)
+      })
+    )
+    .max(12)
+);
+
+const extractionNotesSchema = z.preprocess(
+  truncateArray(6),
+  z.array(z.string().min(1).max(320)).max(6)
+);
+
 export const visibleMessageSchema = z
   .object({
     id: z.string().optional(),
@@ -37,17 +64,9 @@ export const extractionUpdateSchema = z.object({
   customerIntent: z
     .enum(["provide_requirements", "change_previous_answer", "off_topic", "not_sure", "done"])
     .describe("The customer's dominant intent in the latest turn."),
-  evidence: z
-    .array(
-      z.object({
-        field: z.enum(criterionKeys),
-        quote: z.string().min(1).max(500)
-      })
-    )
-    .max(12)
-    .describe("Short transcript evidence for every changed field."),
+  evidence: extractionEvidenceSchema.describe("Short transcript evidence for changed fields."),
   confidence: z.number().min(0).max(1),
-  notes: z.array(z.string().min(1).max(320)).max(6)
+  notes: extractionNotesSchema
 });
 
 export const extractResponseSchema = z.object({
