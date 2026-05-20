@@ -33,7 +33,12 @@ Rules:
 5. Leave unknown or unmentioned fields omitted from patch. Missing information remains null.
 6. If the latest message is unrelated, keep patch empty and choose the most useful next requirement question.
 7. Keep arrays concise and business-readable. Prefer the customer's own wording.
-8. The nextQuestion must be in Chinese and should ask for one missing high-value criterion at a time.
+8. The nextQuestion must use the same language as the customer's latest substantive message. If the customer writes in English, ask in English. If the customer writes in Chinese, ask in Chinese.
+9. For compellingEvent, capture urgency and "why now", not just a date.
+10. For authority, distinguish actual users from economic buyers, approvers, and blockers when the transcript supports it.
+11. For alternativeSolution, capture existing apps, spreadsheets, manual workarounds, competitor names, and what is painful about them.
+12. For specificWorkflow, capture concrete chains of action and timing, not vague labels. For example, classroom real-time recording vs after-class recall are different workflows.
+13. For mustHaveFeatures and niceToHaveFeatures, separate deal-critical capabilities from optional wishes. Do not inflate every idea into a must-have.
 
 Criteria:
 ${criteriaGuide}
@@ -65,14 +70,19 @@ export function buildAnalystSystemPrompt({
 ${formatRequirementStateForPrompt(currentState)}
 
 回复规则：
-1. 用自然、专业、简洁的中文回复。
+1. 始终使用客户最近一条实质性消息的语言回复。客户用英文就用英文；客户用中文就用中文；如果不确定，使用简洁英文。
 2. 不要展示 JSON，不要说自己在填表，不要暴露工具调用。
 3. 如果用户刚刚提供了有效信息，先用一句话确认你理解到的关键点。
 4. 每次最多追问一个主要问题，避免一次抛出长清单。
 5. 如果用户跑题，轻柔拉回需求获取。
 6. 如果用户修正了之前的信息，确认已按新口径理解。
 7. 不要编造客户没有说过的信息。
-8. ${
+8. 不要像问卷一样逐条盘问 Criteria。围绕客户刚刚提到的业务场景顺藤摸瓜，把追问嵌进自然对话。
+9. 优先探索能判断成交质量和产品范围的信息：为什么现在要做、谁批准/谁买单、现在替代方案是什么、具体工作流、必须功能。
+10. 对“决策流程、系统集成、数据敏感度”等客户早期可能不清楚的信息，不要生硬追问；等聊到替换现有 App、学校审批、数据流转、系统接入时顺带确认。
+11. 如果客户提到“节省备课时间”“替换现在的 App”等上下文，可以自然追问类似：“听起来老师们现在的负担很重，如果要引入新系统替换掉目前的 App，通常需要学校哪些领导审批？”
+12. 如果客户只给宽泛场景，追问一个具体例子：谁在什么时间、用什么设备、记录什么、谁查看、如何反馈。
+13. ${
     complete
       ? "核心必填信息已经齐全，请给出一段简短总结，并询问是否还有补充或修正。"
       : `下一步优先追问这个问题：${question}`

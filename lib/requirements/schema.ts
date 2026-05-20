@@ -11,7 +11,7 @@ const nullableTrimmedString = (maxLength = 600) =>
       return trimmed.length > 0 ? trimmed : null;
     },
     z.string().min(1).max(maxLength).nullable()
-  );
+  ).default(null);
 
 const nullableStringArray = (maxItems = 12, maxItemLength = 240) =>
   z.preprocess(
@@ -28,18 +28,26 @@ const nullableStringArray = (maxItems = 12, maxItemLength = 240) =>
       return cleaned.length > 0 ? Array.from(new Set(cleaned)) : null;
     },
     z.array(z.string().min(1).max(maxItemLength)).max(maxItems).nullable()
-  );
+  ).default(null);
 
 export const dataSensitivitySchema = z
   .enum(["low", "medium", "high", "regulated", "unknown"])
-  .nullable();
+  .nullable()
+  .default(null);
 
 export const requirementStateSchema = z.object({
   industry: nullableTrimmedString(160),
   companySize: nullableTrimmedString(120),
   corePainPoints: nullableStringArray(8, 280),
+  compellingEvent: nullableTrimmedString(500),
   currentWorkflow: nullableTrimmedString(900),
+  specificWorkflow: nullableTrimmedString(1200),
   targetUsers: nullableStringArray(8, 180),
+  authority: nullableTrimmedString(700),
+  alternativeSolution: nullableTrimmedString(700),
+  platformPreference: nullableStringArray(6, 160),
+  mustHaveFeatures: nullableStringArray(12, 240),
+  niceToHaveFeatures: nullableStringArray(12, 240),
   budgetRange: nullableTrimmedString(160),
   timeline: nullableTrimmedString(160),
   successMetrics: nullableStringArray(8, 240),
@@ -89,10 +97,26 @@ export const requirementCriteria: RequirementCriterion[] = [
     required: true
   },
   {
+    key: "compellingEvent",
+    label: "购买触发事件",
+    description:
+      "为什么是现在要解决：续费压力、新学期、政策变化、业务扩张、成本上升、投诉增加等紧迫触发。",
+    question: "是什么让你们现在开始认真考虑更换或引入新系统？",
+    required: true
+  },
+  {
     key: "currentWorkflow",
     label: "当前流程",
-    description: "客户现在如何完成相关工作。",
+    description: "客户现在如何完成相关工作，包括已在使用的 App、表格、人工流程或临时替代方法。",
     question: "你们现在通常怎么处理这件事？可以简单描述现有流程。",
+    required: true
+  },
+  {
+    key: "specificWorkflow",
+    label: "具体使用链路",
+    description:
+      "更细的真实场景链路，例如老师是在课堂实时记录学生表现，还是课后回忆再补录；谁创建、谁查看、谁反馈。",
+    question: "能不能举一个最近发生的具体场景，从开始到结束通常怎么操作？",
     required: true
   },
   {
@@ -101,6 +125,43 @@ export const requirementCriteria: RequirementCriterion[] = [
     description: "系统的主要使用者或受影响角色。",
     question: "这个方案主要会给哪些角色或团队使用？",
     required: true
+  },
+  {
+    key: "authority",
+    label: "决策权",
+    description:
+      "使用者、影响者、审批者和买单者分别是谁；例如老师使用，但校长、教务主任或总部采购买单。",
+    question: "实际使用的人和最终批准或买单的人通常是同一批人吗？",
+    required: true
+  },
+  {
+    key: "alternativeSolution",
+    label: "竞品/替代方案",
+    description:
+      "如果不买本产品，客户会继续用什么：现有 App、表格、人工流程、竞品或不处理；最好提取具体名称和不满意点。",
+    question: "如果暂时不换新系统，你们会继续用什么办法或哪个工具来解决？",
+    required: true
+  },
+  {
+    key: "platformPreference",
+    label: "终端与平台偏好",
+    description: "使用者偏好的终端和平台：手机 App、平板、电脑网页、微信/企业微信、钉钉等。",
+    question: "老师或一线用户更希望在手机、平板，还是电脑网页上使用？",
+    required: false
+  },
+  {
+    key: "mustHaveFeatures",
+    label: "必须具备特性",
+    description: "没有这些功能客户就很难采用的核心能力，用于约束 MVP 范围。",
+    question: "如果第一版只能做少数功能，哪些是必须有的？",
+    required: true
+  },
+  {
+    key: "niceToHaveFeatures",
+    label: "锦上添花特性",
+    description: "有价值但不是第一版成交或试点必需的功能。",
+    question: "还有哪些功能是有了更好，但第一版没有也可以接受的？",
+    required: false
   },
   {
     key: "budgetRange",

@@ -94,8 +94,6 @@ export async function POST(request: Request) {
       state: nextState,
       messages,
       extraction: responsePayload
-    }).catch((error) => {
-      console.error("Failed to persist requirement session", error);
     });
 
     await notifyRequirementWebhook({

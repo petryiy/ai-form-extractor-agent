@@ -9,22 +9,7 @@ import {
 } from "@/lib/requirements/schema";
 
 export function createEmptyRequirementState(): RequirementState {
-  return {
-    industry: null,
-    companySize: null,
-    corePainPoints: null,
-    currentWorkflow: null,
-    targetUsers: null,
-    budgetRange: null,
-    timeline: null,
-    successMetrics: null,
-    integrations: null,
-    stakeholders: null,
-    constraints: null,
-    dataSensitivity: null,
-    decisionProcess: null,
-    additionalContext: null
-  };
+  return requirementStateSchema.parse({});
 }
 
 export function parseRequirementState(input: unknown): RequirementState {

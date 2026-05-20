@@ -9,6 +9,12 @@ import type {
 } from "@/lib/requirements/contracts";
 import { storedRequirementSessionSchema } from "@/lib/requirements/contracts";
 import type { RequirementState } from "@/lib/requirements/schema";
+import {
+  getSupabaseRequirementSession,
+  hasSupabaseConfig,
+  listSupabaseRequirementSessions,
+  upsertSupabaseRequirementSession
+} from "@/lib/server/supabase-session-store";
 
 type SessionStore = Record<string, StoredRequirementSession>;
 
@@ -53,11 +59,12 @@ export async function saveRequirementSession({
   messages: VisibleMessage[];
   extraction: ExtractResponse;
 }) {
-  const store = await readStore();
   const now = extraction.updatedAt;
-  const current = store[sessionId];
+  const current = hasSupabaseConfig()
+    ? await getSupabaseRequirementSession(sessionId)
+    : (await readStore())[sessionId];
 
-  store[sessionId] = {
+  const nextSession: StoredRequirementSession = {
     sessionId,
     state,
     messages,
@@ -77,17 +84,32 @@ export async function saveRequirementSession({
     updatedAt: now
   };
 
+  if (hasSupabaseConfig()) {
+    await upsertSupabaseRequirementSession(nextSession);
+    return;
+  }
+
+  const store = await readStore();
+  store[sessionId] = nextSession;
   await writeStore(store);
 }
 
 export async function getRequirementSession(
   sessionId: string
 ): Promise<StoredRequirementSession | null> {
+  if (hasSupabaseConfig()) {
+    return getSupabaseRequirementSession(sessionId);
+  }
+
   const store = await readStore();
   return store[sessionId] ?? null;
 }
 
 export async function listRequirementSessions(): Promise<StoredRequirementSession[]> {
+  if (hasSupabaseConfig()) {
+    return listSupabaseRequirementSessions();
+  }
+
   const store = await readStore();
   return Object.values(store).sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
 }
