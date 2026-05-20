@@ -77,11 +77,13 @@ async function requestSupabase<T>(path: string, init?: RequestInit): Promise<T> 
     throw new Error(`Supabase request failed (${response.status}): ${details}`);
   }
 
-  if (response.status === 204) {
+  const text = await response.text();
+
+  if (response.status === 204 || !text.trim()) {
     return undefined as T;
   }
 
-  return (await response.json()) as T;
+  return JSON.parse(text) as T;
 }
 
 export async function getSupabaseRequirementSession(
