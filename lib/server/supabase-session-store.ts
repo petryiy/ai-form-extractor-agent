@@ -102,6 +102,12 @@ export async function listSupabaseRequirementSessions(): Promise<StoredRequireme
   return rows.map(toStoredSession);
 }
 
+export async function checkSupabaseRequirementSessionStorage() {
+  await requestSupabase<Array<{ session_id: string }>>(
+    "requirement_sessions?select=session_id&limit=1"
+  );
+}
+
 export async function upsertSupabaseRequirementSession(session: StoredRequirementSession) {
   await requestSupabase<void>("requirement_sessions", {
     method: "POST",

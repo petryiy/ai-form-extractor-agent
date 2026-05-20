@@ -91,7 +91,8 @@ export function AdminDashboard() {
       const json = await response.json();
 
       if (!response.ok) {
-        throw new Error(json.error ?? "读取会话列表失败。");
+        const details = typeof json?.details === "string" ? `: ${json.details}` : "";
+        throw new Error(`${json?.error ?? "读取会话列表失败。"}${details}`);
       }
 
       const data = sessionListResponseSchema.parse(json);
@@ -115,7 +116,8 @@ export function AdminDashboard() {
       const json = await response.json();
 
       if (!response.ok) {
-        throw new Error(json.error ?? "读取会话详情失败。");
+        const details = typeof json?.details === "string" ? `: ${json.details}` : "";
+        throw new Error(`${json?.error ?? "读取会话详情失败。"}${details}`);
       }
 
       setSelectedSession(storedRequirementSessionSchema.parse(json));

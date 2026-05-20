@@ -21,11 +21,22 @@ export async function GET(
     return Response.json({ error: "Invalid session id." }, { status: 400 });
   }
 
-  const session = await getRequirementSession(parsed.data.sessionId);
+  try {
+    const session = await getRequirementSession(parsed.data.sessionId);
 
-  if (!session) {
-    return Response.json({ error: "Session not found." }, { status: 404 });
+    if (!session) {
+      return Response.json({ error: "Session not found." }, { status: 404 });
+    }
+
+    return Response.json(session);
+  } catch (error) {
+    return Response.json(
+      {
+        error: "Failed to read requirement session.",
+        details:
+          error instanceof Error ? error.message : "Unknown requirement session read failure."
+      },
+      { status: 500 }
+    );
   }
-
-  return Response.json(session);
 }

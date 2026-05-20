@@ -10,6 +10,7 @@ import type {
 import { storedRequirementSessionSchema } from "@/lib/requirements/contracts";
 import type { RequirementState } from "@/lib/requirements/schema";
 import {
+  checkSupabaseRequirementSessionStorage,
   getSupabaseRequirementSession,
   hasSupabaseConfig,
   listSupabaseRequirementSessions,
@@ -46,6 +47,19 @@ async function readStore(): Promise<SessionStore> {
 async function writeStore(store: SessionStore) {
   await mkdir(dataDirectory, { recursive: true });
   await writeFile(storePath, JSON.stringify(store, null, 2), "utf8");
+}
+
+export function getRequirementSessionStorageMode() {
+  return hasSupabaseConfig() ? "supabase" : "local";
+}
+
+export async function checkRequirementSessionStorage() {
+  if (hasSupabaseConfig()) {
+    await checkSupabaseRequirementSessionStorage();
+    return;
+  }
+
+  await readStore();
 }
 
 export async function saveRequirementSession({

@@ -1,6 +1,7 @@
 import { buildExtractionPrompt } from "@/lib/ai/prompts";
 import { getAiApiConfig, hasAiConfig } from "@/lib/ai/provider";
 import {
+  extractResponseSchema,
   extractRequestSchema,
   extractionUpdateSchema,
   type VisibleMessage
@@ -149,73 +150,74 @@ export async function POST(request: Request) {
   const { currentState, messages } = parsed.data;
   const transcript = toTranscript(messages);
 
-  try {
-    const update = await generateExtractionUpdate({ transcript, currentState });
-    const nextState = mergeRequirementPatch(currentState, update.patch);
-    const missing = getMissingCriteria(nextState);
-    const fallbackQuestion = buildFallbackQuestion(nextState);
-    const changes = diffRequirementStates(currentState, nextState);
+  const update = await generateExtractionUpdate({ transcript, currentState }).catch((error) => {
+    const message = error instanceof Error ? error.message : "Unknown extraction failure.";
+    console.error("AI extraction failed", {
+      sessionId: parsed.data.sessionId,
+      message
+    });
 
-    const responsePayload = {
-      state: nextState,
-      completeness: calculateCompleteness(nextState),
-      missing: missing.map((criterion) => ({
-        key: criterion.key,
-        label: criterion.label,
-        question: criterion.question,
-        required: criterion.required
-      })),
-      nextQuestion: update.nextQuestion ?? fallbackQuestion,
-      changes,
-      evidence: update.evidence,
-      customerIntent: update.customerIntent,
-      confidence: update.confidence,
-      notes: update.notes,
-      updatedAt: new Date().toISOString()
+    return {
+      errorMessage: message
     };
+  });
 
+  const hasExtraction = "patch" in update;
+  const nextState = hasExtraction ? mergeRequirementPatch(currentState, update.patch) : currentState;
+  const missing = getMissingCriteria(nextState);
+  const fallbackQuestion = buildFallbackQuestion(nextState);
+  const changes = diffRequirementStates(currentState, nextState);
+  const responsePayload = extractResponseSchema.parse({
+    state: nextState,
+    completeness: calculateCompleteness(nextState),
+    missing: missing.map((criterion) => ({
+      key: criterion.key,
+      label: criterion.label,
+      question: criterion.question,
+      required: criterion.required
+    })),
+    nextQuestion: hasExtraction ? update.nextQuestion ?? fallbackQuestion : fallbackQuestion,
+    changes,
+    evidence: hasExtraction ? update.evidence : [],
+    customerIntent: hasExtraction ? update.customerIntent : "not_sure",
+    confidence: hasExtraction ? update.confidence : 0,
+    notes: hasExtraction
+      ? update.notes
+      : [`Extraction skipped after model JSON failure: ${update.errorMessage}`],
+    updatedAt: new Date().toISOString()
+  });
+
+  try {
     await saveRequirementSession({
       sessionId: parsed.data.sessionId,
       state: nextState,
       messages,
       extraction: responsePayload
     });
-
-    await notifyRequirementWebhook({
-      sessionId: parsed.data.sessionId,
-      state: nextState,
-      messages,
-      extraction: responsePayload
-    }).catch((error) => {
-      console.error("Failed to notify requirement webhook", error);
-    });
-
-    return Response.json(responsePayload);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown extraction failure.";
-    const missing = getMissingCriteria(currentState);
-    const fallbackQuestion = buildFallbackQuestion(currentState);
-    console.error("AI extraction failed", {
+    const message = error instanceof Error ? error.message : "Unknown storage failure.";
+    console.error("Requirement report save failed", {
       sessionId: parsed.data.sessionId,
       message
     });
 
-    return Response.json({
-      state: currentState,
-      completeness: calculateCompleteness(currentState),
-      missing: missing.map((criterion) => ({
-        key: criterion.key,
-        label: criterion.label,
-        question: criterion.question,
-        required: criterion.required
-      })),
-      nextQuestion: fallbackQuestion,
-      changes: [],
-      evidence: [],
-      customerIntent: "not_sure",
-      confidence: 0,
-      notes: [`Extraction skipped after model JSON failure: ${message}`],
-      updatedAt: new Date().toISOString()
-    });
+    return Response.json(
+      {
+        error: "Requirement report save failed.",
+        details: message
+      },
+      { status: 500 }
+    );
   }
+
+  await notifyRequirementWebhook({
+    sessionId: parsed.data.sessionId,
+    state: nextState,
+    messages,
+    extraction: responsePayload
+  }).catch((error) => {
+    console.error("Failed to notify requirement webhook", error);
+  });
+
+  return Response.json(responsePayload);
 }
